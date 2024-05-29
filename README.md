@@ -3,16 +3,28 @@ ShopEasy is a Flask application for an online store where users can register, lo
 Features
 
 User Authentication: Users can register, log in, and log out securely.
+
 Product Search: Users can search for products by name.
+
 Product Purchase: Authenticated users can buy products.
 
 Technologies Used
+
 Python
+
 Flask
+
 SQLAlchemy
+
 Flask-Login
+
 psutil (for users module)
 
 For cloning:
-git clone https://github.com/your/repository.git
+
+git clone https://github.com/Zoyaaaaaaa/ShopEasy-Uplyft-.git
+
 cd ShopEasy-Uplyft-
+
+To run :
+python app.py
