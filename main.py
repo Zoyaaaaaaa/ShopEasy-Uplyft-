@@ -139,6 +139,12 @@ def home():
     return render_template("home.html", products=products, session=session)
 
 
+@app.route("/chat", methods=["POST"])
+def chat_response():
+    user_message = request.json.get("message")
+    response = handle_user_message(user_message)
+    return jsonify({"reply": response})
+
 # Function to handle user messages in the chatbot
 def handle_user_message(message):
     message = message.lower()
