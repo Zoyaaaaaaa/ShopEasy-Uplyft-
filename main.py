@@ -176,9 +176,9 @@ def handle_user_message(message):
    
         if current_user.is_authenticated:
             username = current_user.username
-            response = f"Hey {username}! I can help you search for products or buy them. Try 'search [product name]' or 'buy [product name]'."
+            response = f"Hey {username}! I can help you search for products or buy them. Try 'search [product name]'."
         else:
-            response = "Hey there! I can help you search for products or buy them. Try 'search [product name]' or 'buy [product name]'."
+            response = "Hey there! I can help you search for products or buy them. Try 'search [product name]'."
     return response
 
 
