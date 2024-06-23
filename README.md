@@ -20,7 +20,7 @@ cd ShopEasy-Uplyft-
 To run the ShopEasy Flask application, execute the `app.py` file using Python:
 
 ```bash
-python app.py
+python main.py
 ```
 
 ### Accessing the Application
