@@ -1,7 +1,9 @@
+import os
+import requests
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from psutil import users
+import google.generativeai as genai
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -13,6 +15,10 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# Configure Google Generative AI
+api_key = "AIzaSyCIb89ZG8R2VfEChi07w9ze2o_yyBYZO_g"
+genai.configure(api_key=api_key)
 
 # Define User and Product models
 class Users(UserMixin, db.Model):
@@ -27,12 +33,12 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     stock = db.Column(db.Integer, nullable=False)
 
-# Created database tables and populate sample data 
+# Create database tables and populate sample data
 with app.app_context():
     db.create_all()
     if not Product.query.first():
         sample_products = [
-     Product(name="Desktop Computer", description="High-performance desktop computer for professionals", price=1299.99, stock=10),
+              Product(name="Desktop Computer", description="High-performance desktop computer for professionals", price=1299.99, stock=10),
     Product(name="Wireless Mouse", description="Ergonomic wireless mouse for comfortable computing", price=39.99, stock=50),
     Product(name="External Hard Drive", description="Portable external hard drive for data backup", price=89.99, stock=30),
     Product(name="USB Flash Drive", description="Compact USB flash drive for easy data transfer", price=19.99, stock=100),
@@ -95,7 +101,6 @@ def load_user(user_id):
 # Routes for user authentication (register, login, logout)
 @app.route('/register', methods=["GET", "POST"])
 def register():
-    # Registration form handling
     if request.method == "POST":
         user = Users(username=request.form.get("username"), password=request.form.get("password"))
         db.session.add(user)
@@ -106,7 +111,6 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    # Login form handling
     if request.method == "POST":
         user = Users.query.filter_by(username=request.form.get("username")).first()
         if user and user.password == request.form.get("password"):
@@ -130,7 +134,6 @@ def home():
     products = None
     if request.method == 'POST':
         query = request.form.get('query')
-        # Check if the user wants to reset the session
         if 'reset_session' in request.form:
             session.clear()
             flash('Session reset successfully!', 'success')
@@ -138,20 +141,16 @@ def home():
         products = Product.query.filter(Product.name.ilike(f'%{query}%')).all()
     return render_template("home.html", products=products, session=session)
 
-
 @app.route("/chat", methods=["POST"])
 def chat_response():
     user_message = request.json.get("message")
     response = handle_user_message(user_message)
     return jsonify({"reply": response})
 
-# Function to handle user messages in the chatbot
 def handle_user_message(message):
     message = message.lower()
-
-    # Extract keywords
     keywords = message.split()
-
+    
     if "search" in keywords:
         query = " ".join([word for word in keywords if word != "search"]).strip()
         products = Product.query.filter(Product.name.ilike(f'%{query}%')).all()
@@ -181,11 +180,7 @@ def handle_user_message(message):
     elif "suggest" in keywords or "recommend" in keywords:
         query = " ".join([word for word in keywords if word not in ["suggest", "recommend"]]).strip()
         if query:
-            related_products = Product.query.filter(Product.name.ilike(f'%{query}%')).limit(5).all()
-            if related_products:
-                response = "💡 Here are some products you might like:\n" + "\n".join([f"🔹 {p.name}: ${p.price}" for p in related_products])
-            else:
-                response = "😞 I couldn't find any related products. Try another category or keyword."
+            response = get_gemini_suggestions(query)
         else:
             response = "🔍 Please provide a category or keyword for suggestions."
 
@@ -233,51 +228,26 @@ def handle_user_message(message):
 
     return response
 
-# def handle_user_message(message):
-#     message = message.lower()
-#     if "search" in message:
-#         query = message.replace("search", "").strip()
-#         products = Product.query.filter(Product.name.ilike(f'%{query}%')).all()
-#         if products:
-#             response = "✨ Here are the products I found for you:\n" + "\n".join([f"🔹 {p.name}: ${p.price}" for p in products])
-#         else:
-#             response = "😞 No products found. Maybe try a different keyword?"
-#     elif "buy" in message:
-#         if not current_user.is_authenticated:
-#             return "🔒 Please log in to buy products."
-#         product_name = message.replace("buy", "").strip()
-#         product = Product.query.filter(Product.name.ilike(f'%{product_name}%')).first() 
-#         if product:
-#             if product.stock > 0:
-#                 if session.get(product_name, False):
-#                     return f"🛒 You have already bought {product_name} in this session."
-#                 product.stock -= 1
-#                 db.session.commit()
-#                 session[product_name] = True
-#                 response = f"🎉 Awesome choice! You have successfully bought {product_name} for ${product.price}."
-#             else:
-#                 response = f"😔 Sorry, {product_name} is out of stock. Maybe try another one?"
-#         else:
-#             response = "🤔 Hmm, I couldn't find that product. Could you check the name again?"
-#     else:
-#         if current_user.is_authenticated:
-#             username = current_user.username
-#             response = (
-#                 f"Hey {username}! 😊 How can I assist you today?\n"
-#                 "🔍 Try searching for products with 'search [product name]'.\n"
-#                 "🛒 Or, buy a product with 'buy [product name]'.\n"
-#                 "💡 Need suggestions? Ask me about our latest products!"
-#             )
-#         else:
-#             response = (
-#                 "Hello there! 👋 I'm here to help you find and buy products.\n"
-#                 "🔍 Try searching for products with 'search [product name]'.\n"
-#                 "🛒 Or, buy a product with 'buy [product name]'.\n"
-#                 "🔒 Don't forget to log in to make purchases.\n"
-#                 "💡 Need tips or suggestions? Just ask!"
-#             )
-#     return response
-
+def get_gemini_suggestions(query):
+    generation_config = {
+        "temperature": 1,
+        "top_p": 0.95,
+        "top_k": 64,
+        "response_mime_type": "text/plain",
+    }
+    
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-flash",
+        generation_config=generation_config,
+    )
+    
+    # Starting a chat session
+    chat_session = model.start_chat(history=[])
+    
+    # Sending the prompt and getting the response
+    response = chat_session.send_message(query)
+    
+    return response.text
 
 if __name__ == "__main__":
     app.run(debug=True)
