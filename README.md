@@ -1,3 +1,4 @@
+![image](https://github.com/Zoyaaaaaaa/ShopEasy-Uplyft-/assets/126981793/adff460e-de53-42f3-89e5-865c8f6b1e99)
 
 
 ## Project Setup and Execution Instructions
