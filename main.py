@@ -216,21 +216,9 @@ def handle_user_message(message):
     else:
         if current_user.is_authenticated:
             username = current_user.username
-            response = (
-                f"Hey {username}! 😊 How can I assist you today?\n"
-                "🔍 Try searching for products with 'search [product name]'.\n"
-                "🛒 Or, buy a product with 'buy [product name]'.\n"
-                "💡 Need suggestions? Ask me about our latest products!"
-            )
+            response = f"Hey {username}! I can help you search for products or buy them. Try 'search [product name]' or 'buy [product name]'."
         else:
-            response = (
-                "Hello there! 👋 I'm here to help you find and buy products.\n"
-                "🔍 Try searching for products with 'search [product name]'.\n"
-                "🛒 Or, buy a product with 'buy [product name]'.\n"
-                "🔒 Don't forget to log in to make purchases.\n"
-                "💡 Need tips or suggestions? Just ask!"
-            )
-
+            response = "Hey there! I can help you search for products or buy them. Try 'search [product name]' or 'buy [product name]'."
     return response
 
 # def handle_user_message(message):
